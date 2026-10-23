@@ -2,7 +2,7 @@
 
 The classic school-bench pen fight game for the browser. Flick your pen and knock the other one off the bench, without falling off yourself.
 
-- **vs Computer** (Easy / Medium / Hard) or **2 Players** on the same phone
+- **vs Computer** (Easy / Medium / Hard), **2 Players** on the same phone, or **online with a friend** (each on their own phone)
 - 15 pens: Real Madrid, Barça, Bayern Munich, Man City, Liverpool, Man United, Bangladesh, Brazil, Argentina, IEEE, IEEE Photonics Society, IEEE Computer Society, COMPAS, QPAIN, OMLET
 - Works on phone and desktop, and runs offline once installed
 - **Installable as an app** (PWA) from the website: Android/Chrome/Edge show an "Install app" button, and on iPhone you use Share → Add to Home Screen
@@ -12,6 +12,13 @@ The classic school-bench pen fight game for the browser. Flick your pen and knoc
 2. Flick near the end of the pen to spin it, or the middle to push it straight.
 3. Knock the other pen off the bench. If your own pen falls, you lose the round.
 4. The first player to win 3 rounds wins the match.
+
+## Playing online with a friend
+1. Tap **Play online with a friend → Create a room**. You get a 6-letter code and a link.
+2. Send the link (Share link opens WhatsApp/Messenger). Your friend opens it, or types the code under "Got a code from a friend?" in the app.
+3. Each of you picks a pen. The match starts on both phones, and you can see each other's aim as it happens.
+
+The two phones exchange moves through a free public MQTT relay (HiveMQ public broker, with EMQX and Mosquitto as fallbacks). No account or server of our own is needed. Anyone who knows a room code could read that room's moves, which doesn't matter for a game. These relays are free test services with no uptime guarantee. If they become unreliable, switch to a Firebase project of your own.
 
 ## Put it online with GitHub Pages
 1. Create a new **public** repository on GitHub, for example `pen-fight`.

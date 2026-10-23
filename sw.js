@@ -1,5 +1,5 @@
 // Offline support for the installed app. Bump VERSION whenever you change a file.
-const VERSION = 'penfight-v3';
+const VERSION = 'penfight-v4';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png'];
 
 self.addEventListener('install', e => {
