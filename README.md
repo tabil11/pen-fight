@@ -3,7 +3,7 @@
 The classic school-bench pen fight game for the browser. Flick your pen and knock the other one off the bench, without falling off yourself.
 
 - **vs Computer** (Easy / Medium / Hard) or **2 Players** on the same phone
-- 7 pens: Real Madrid, IEEE, IEEE Photonics Society, IEEE Computer Society, COMPASS, QPAIN, OMLET
+- 15 pens: Real Madrid, Barça, Bayern Munich, Man City, Liverpool, Man United, Bangladesh, Brazil, Argentina, IEEE, IEEE Photonics Society, IEEE Computer Society, COMPAS, QPAIN, OMLET
 - Works on phone and desktop, and runs offline once installed
 - **Installable as an app** (PWA) from the website: Android/Chrome/Edge show an "Install app" button, and on iPhone you use Share → Add to Home Screen
 

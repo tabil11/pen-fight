@@ -63,6 +63,7 @@ h2{font-size:clamp(24px,6.5vw,34px)}
 .seg button.on{background:var(--ink);color:#fff}
 .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
 @media (min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+.grp{grid-column:1/-1;font-weight:800;font-size:13px;color:#8a5a2b;text-transform:uppercase;letter-spacing:.6px;margin-top:8px}
 .card{display:flex;flex-direction:column;gap:2px;padding:8px 12px 10px;border-radius:14px;background:#fff;border:2px solid #d9dfef;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:border-color .15s,transform .15s}
 .card:hover{border-color:var(--ink);transform:translateY(-1px)}
 .card canvas{width:100%;height:56px}
@@ -98,7 +99,7 @@ h2{font-size:clamp(24px,6.5vw,34px)}
   <button class="btn" data-go="pvp" style="margin-top:14px">2 Players<small>Same phone, take turns</small></button>
   <div class="row"><button class="btn alt" id="btnHow">How to play</button><button class="btn green hidden" id="btnInstall">Install app</button></div>
   <div id="iosTip" class="hidden">To install on iPhone: tap <b>Share</b> → <b>Add to Home Screen</b>.</div>
-  <div class="foot">Pens: Real Madrid · IEEE · IEEE Photonics Society · IEEE Computer Society · COMPASS · QPAIN · OMLET</div>
+  <div class="foot">15 pens: Real Madrid, Barça, Bayern, Man City, Liverpool, Man United · Bangladesh, Brazil, Argentina · IEEE, IEEE Photonics Society, IEEE Computer Society, COMPAS, QPAIN, OMLET</div>
 </div></div>
 
 <div class="screen" id="how"><div class="paper">
@@ -246,12 +247,49 @@ function circuits(c, x0, x1, r) {
   });
   c.restore();
 }
+function star(c, x, y, R, col) {
+  c.save(); c.translate(x, y); c.fillStyle = col; c.beginPath();
+  for (let i = 0; i < 10; i++) { const t = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? R * 0.42 : R; c.lineTo(Math.cos(t) * rr, Math.sin(t) * rr); }
+  c.closePath(); c.fill(); c.restore();
+}
+function bavaria(c, x, y, R) {
+  c.save(); c.translate(x, y);
+  c.beginPath(); c.arc(0, 0, R, 0, TAU); c.fillStyle = '#fff'; c.fill();
+  c.save(); c.beginPath(); c.arc(0, 0, R * 0.68, 0, TAU); c.clip(); c.rotate(Math.PI / 4);
+  const q = R * 0.3; c.fillStyle = '#0066b2';
+  for (let i = -4; i < 4; i++) for (let j = -4; j < 4; j++) if ((i + j) & 1) c.fillRect(i * q, j * q, q, q);
+  c.restore();
+  c.lineWidth = R * 0.12; c.strokeStyle = '#0066b2'; c.beginPath(); c.arc(0, 0, R * 0.9, 0, TAU); c.stroke();
+  c.restore();
+}
+function cityBadge(c, x, y, R) {
+  c.save(); c.translate(x, y);
+  c.fillStyle = '#1c2c5b'; c.beginPath(); c.arc(0, 0, R, 0, TAU); c.fill();
+  c.fillStyle = '#98c5e9'; c.beginPath(); c.arc(0, 0, R * 0.72, 0, TAU); c.fill();
+  c.restore();
+  star(c, x, y, R * 0.5, '#ffc659');
+}
+function trident(c, x, y, R, col) {
+  c.save(); c.translate(x, y); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = R * 0.2; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(R, 0); c.lineTo(-R * 0.35, 0); c.moveTo(-R * 0.35, -R * 0.6); c.lineTo(-R * 0.35, R * 0.6);
+  c.moveTo(-R * 0.35, -R * 0.6); c.lineTo(-R * 0.85, -R * 0.6); c.moveTo(-R * 0.35, R * 0.6); c.lineTo(-R * 0.85, R * 0.6); c.moveTo(-R * 0.35, 0); c.lineTo(-R * 0.95, 0); c.stroke();
+  [-R * 0.6, 0, R * 0.6].forEach(py => { c.beginPath(); c.moveTo(-R * 1.25, py); c.lineTo(-R * 0.8, py - R * 0.22); c.lineTo(-R * 0.8, py + R * 0.22); c.closePath(); c.fill(); });
+  c.restore();
+}
+function fitOutlined(c, text, x0, x1, h, fill, stroke, lw = 2, weight = '900', family = FONT) {
+  let size = h; c.font = `${weight} ${size}px ${family}`;
+  const w = c.measureText(text).width + lw;
+  if (w > x1 - x0) { size *= (x1 - x0) / w; c.font = `${weight} ${size}px ${family}`; }
+  c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+  c.lineWidth = lw; c.strokeStyle = stroke; c.strokeText(text, (x0 + x1) / 2, 0.5);
+  c.fillStyle = fill; c.fillText(text, (x0 + x1) / 2, 0.5);
+}
 const BIN = (() => { const r = mulberry32(11); return Array.from({ length: 5 }, () => Array.from({ length: 44 }, () => r() < 0.5 ? '0' : '1').join('')); })();
 
 // ---------- pen designs ----------
 // barrel(c, a, b, r): paint the barrel between x=a (cap end) and x=b (grip start)
 const DESIGNS = [
-  { id: 'rm', name: 'Real Madrid', sub: 'Hala Madrid! White & gold', capCol: '#f5f5f5', ring: '#d4af37', grip: '#1d2b64', clip: 'gold',
+  { id: 'rm', group: 'clubs', name: 'Real Madrid', sub: 'Hala Madrid! White & gold', capCol: '#f5f5f5', ring: '#d4af37', grip: '#1d2b64', clip: 'gold',
     barrel(c, a, b, r) {
       c.fillStyle = '#fbfbfb'; c.fillRect(a, -r, b - a, 2 * r);
       c.fillStyle = '#3d2b84'; c.fillRect(a, -r, b - a, 2.4); c.fillRect(a, r - 2.4, b - a, 2.4);
@@ -259,7 +297,7 @@ const DESIGNS = [
       crestRM(c, a + 16, 0, r * 0.7);
       c.fillStyle = '#1d2b64'; fitCenter(c, 'REAL MADRID', a + 27, b - 11, r * 0.95, '900');
     } },
-  { id: 'ieee', name: 'IEEE', sub: 'Advancing Technology for Humanity', capCol: '#eef2f6', ring: '#00629B', grip: '#0a3d5c', clip: 'silver',
+  { id: 'ieee', group: 'ieee', name: 'IEEE', sub: 'Advancing Technology for Humanity', capCol: '#eef2f6', ring: '#00629B', grip: '#0a3d5c', clip: 'silver',
     barrel(c, a, b, r) {
       const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#0078bb'); g.addColorStop(1, '#00527f');
       c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
@@ -267,13 +305,13 @@ const DESIGNS = [
       c.save(); c.letterSpacing = '1.5px'; c.fillStyle = '#fff'; fitCenter(c, 'IEEE', a + 28, b - 6, r * 1.15, '900'); c.restore();
       c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(b - 4, -r, 1.2, 2 * r);
     } },
-  { id: 'ieeeps', name: 'IEEE Photonics Society', sub: 'Lasers, light & optics', capCol: '#0071A5', ring: '#F37A20', grip: '#5f6164', clip: 'silver',
+  { id: 'ieeeps', group: 'ieee', name: 'IEEE Photonics Society', sub: 'Lasers, light & optics', capCol: '#0071A5', ring: '#F37A20', grip: '#5f6164', clip: 'silver',
     barrel(c, a, b, r) {
       c.fillStyle = '#fdfdfd'; c.fillRect(a, -r, b - a, 2 * r);
       starburst(c, a + 13, 0, r * 0.95, '#F37A20');
       richText(c, [{ t: 'IEEE ', col: '#808285', w: 800, s: 0.75 }, { t: 'Photonics', col: '#0071A5', w: 900 }], a + 26, b - 5, r * 1.05);
     } },
-  { id: 'ieeecs', name: 'IEEE Computer Society', sub: 'Code, compute, connect', capCol: '#F7941D', ring: '#0d1b33', grip: '#111a2b', clip: 'black',
+  { id: 'ieeecs', group: 'ieee', name: 'IEEE Computer Society', sub: 'Code, compute, connect', capCol: '#F7941D', ring: '#0d1b33', grip: '#111a2b', clip: 'black',
     barrel(c, a, b, r) {
       const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#0f2a52'); g.addColorStop(1, '#0a1a33');
       c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
@@ -285,15 +323,15 @@ const DESIGNS = [
       fitCenter(c, 'SOCIETY', a + 24, b - 6, r * 0.62, '800', FONT, r * 0.42);
       c.fillStyle = '#F7941D'; c.fillRect(b - 4, -r, 2, 2 * r);
     } },
-  { id: 'compass', name: 'COMPASS', sub: 'Conference edition, navy & gold', capCol: '#c9a13b', ring: '#0f2747', grip: '#0a1a30', clip: 'gold',
+  { id: 'compass', group: 'ieee', name: 'COMPAS', sub: 'Conference edition, navy & gold', capCol: '#c9a13b', ring: '#0f2747', grip: '#0a1a30', clip: 'gold',
     barrel(c, a, b, r) {
       const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#13305a'); g.addColorStop(1, '#0c1f3c');
       c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
       c.fillStyle = '#d6a842'; c.fillRect(a + 1, -r, 1.5, 2 * r); c.fillRect(b - 5, -r, 1.5, 2 * r); c.fillRect(b - 8, -r, 0.8, 2 * r);
       compassRose(c, a + 14, 0, r * 0.9);
-      richText(c, 'COMPASS'.split('').map(t => ({ t, col: '#ecc760', w: 900, gap: 1.4 })), a + 27, b - 10, r * 0.95);
+      richText(c, 'COMPAS'.split('').map(t => ({ t, col: '#ecc760', w: 900, gap: 1.4 })), a + 27, b - 10, r * 0.95);
     } },
-  { id: 'qpain', name: 'QPAIN', sub: 'Quantum Photonics, AI & Networking', capCol: '#F26A1B', ring: '#7a0f1f', grip: '#3d0710', clip: 'silver',
+  { id: 'qpain', group: 'ieee', name: 'QPAIN', sub: 'Quantum Photonics, AI & Networking', capCol: '#F26A1B', ring: '#7a0f1f', grip: '#3d0710', clip: 'silver',
     barrel(c, a, b, r) {
       const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#8e1326'); g.addColorStop(0.7, '#a8231c'); g.addColorStop(1, '#d2531a');
       c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
@@ -303,7 +341,7 @@ const DESIGNS = [
       atom(c, a + 13, 0, r * 0.8, '#fff');
       richText(c, [{ t: 'QPAIN', col: '#fff', w: 900 }, { t: ' 2027', col: '#ffd166', w: 800, s: 0.7 }], a + 25, b - 4, r * 1.05);
     } },
-  { id: 'omlet', name: 'OMLET', sub: 'IEEE OMLET 2026 edition', capCol: '#1e3a8a', ring: '#F58220', grip: '#0d1d4a', clip: 'silver',
+  { id: 'omlet', group: 'ieee', name: 'OMLET', sub: 'IEEE OMLET 2026 edition', capCol: '#1e3a8a', ring: '#F58220', grip: '#0d1d4a', clip: 'silver',
     barrel(c, a, b, r) {
       const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#2b55c0'); g.addColorStop(0.5, '#1f3f99'); g.addColorStop(1, '#172f73');
       c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
@@ -311,7 +349,70 @@ const DESIGNS = [
       omletO(c, a + 12, 0, r * 0.82);
       richText(c, [{ t: 'MLET', col: '#fff', w: 900 }, { t: ' 2026', col: '#F58220', w: 800, s: 0.68 }], a + 23, b - 23, r * 1.1, 'left');
     } },
+  { id: 'barca', group: 'clubs', name: 'FC Barcelona', sub: 'Més que un club', capCol: '#004d98', ring: '#edbb00', grip: '#a50044', clip: 'gold',
+    barrel(c, a, b, r) {
+      for (let x = a, i = 0; x < b; x += 7, i++) { c.fillStyle = i % 2 ? '#a50044' : '#004d98'; c.fillRect(x, -r, 7, 2 * r); }
+      c.fillStyle = '#edbb00'; c.fillRect(b - 4, -r, 2, 2 * r);
+      fitOutlined(c, 'FC BARÇA', a + 4, b - 7, r * 1.05, '#edbb00', '#1a1030', 2.6);
+    } },
+  { id: 'bayern', group: 'clubs', name: 'Bayern Munich', sub: 'Mia san mia', capCol: '#f4f4f4', ring: '#dc052d', grip: '#0066b2', clip: 'silver',
+    barrel(c, a, b, r) {
+      const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#e30a33'); g.addColorStop(1, '#b8001f');
+      c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
+      c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(a, -r, b - a, 1.8); c.fillRect(a, r - 1.8, b - a, 1.8);
+      bavaria(c, a + 13, 0, r * 0.82);
+      c.fillStyle = '#fff'; fitCenter(c, 'FC BAYERN', a + 26, b - 5, r * 1.0, '900');
+    } },
+  { id: 'city', group: 'clubs', name: 'Manchester City', sub: 'Sky blue Cityzens', capCol: '#ffffff', ring: '#1c2c5b', grip: '#1c2c5b', clip: 'silver',
+    barrel(c, a, b, r) {
+      const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#86c5ee'); g.addColorStop(1, '#5aa2d6');
+      c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
+      cityBadge(c, a + 13, 0, r * 0.8);
+      c.fillStyle = '#1c2c5b'; fitCenter(c, 'MAN CITY', a + 26, b - 7, r * 1.0, '900');
+      c.fillRect(b - 4, -r, 2, 2 * r);
+    } },
+  { id: 'liverpool', group: 'clubs', name: 'Liverpool', sub: "You'll Never Walk Alone", capCol: '#c8102e', ring: '#f6eb61', grip: '#6d0716', clip: 'gold',
+    barrel(c, a, b, r) {
+      const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#d0142f'); g.addColorStop(1, '#a50d26');
+      c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
+      c.fillStyle = '#f6eb61'; c.fillRect(a + 2, -r, 1.2, 2 * r); c.fillRect(b - 5, -r, 1.2, 2 * r);
+      richText(c, [{ t: 'YNWA ', col: '#f6eb61', w: 900, s: 0.62 }, { t: 'LIVERPOOL', col: '#fff', w: 900 }], a + 6, b - 7, r * 1.0);
+    } },
+  { id: 'manutd', group: 'clubs', name: 'Manchester United', sub: 'The Red Devils', capCol: '#1a1a1a', ring: '#fbe122', grip: '#1a1a1a', clip: 'black',
+    barrel(c, a, b, r) {
+      const g = c.createLinearGradient(a, 0, b, 0); g.addColorStop(0, '#e0301e'); g.addColorStop(1, '#b51f14');
+      c.fillStyle = g; c.fillRect(a, -r, b - a, 2 * r);
+      c.fillStyle = '#111'; c.fillRect(a, -r, b - a, 1.6); c.fillRect(a, r - 1.6, b - a, 1.6);
+      trident(c, a + 15, 0, r * 0.75, '#fbe122');
+      c.fillStyle = '#fff'; fitCenter(c, 'MAN UNITED', a + 27, b - 5, r * 0.95, '900');
+    } },
+  { id: 'bd', group: 'countries', name: 'Bangladesh', sub: 'সবার আগে বাংলাদেশ', capCol: '#f42a41', ring: '#004d33', grip: '#004d33', clip: 'silver',
+    barrel(c, a, b, r) {
+      c.fillStyle = '#006a4e'; c.fillRect(a, -r, b - a, 2 * r);
+      c.fillStyle = '#f42a41'; c.beginPath(); c.arc(a + 14, 0, r * 0.68, 0, TAU); c.fill();
+      c.fillStyle = '#fff'; fitCenter(c, 'বাংলাদেশ', a + 26, b - 5, r * 1.15, '700', BN);
+    } },
+  { id: 'brazil', group: 'countries', name: 'Brazil', sub: '★★★★★ হেক্সা কবে?', capCol: '#009c3b', ring: '#ffdf00', grip: '#002776', clip: 'gold',
+    barrel(c, a, b, r) {
+      c.fillStyle = '#ffdf00'; c.fillRect(a, -r, b - a, 2 * r);
+      c.fillStyle = '#009c3b'; c.fillRect(a, -r, b - a, 2.6); c.fillRect(a, r - 2.6, b - a, 2.6);
+      const ex = a + 13;
+      c.beginPath(); c.moveTo(ex - r * 0.95, 0); c.lineTo(ex, -r * 0.75); c.lineTo(ex + r * 0.95, 0); c.lineTo(ex, r * 0.75); c.closePath(); c.fill();
+      c.fillStyle = '#002776'; c.beginPath(); c.arc(ex, 0, r * 0.42, 0, TAU); c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = 1; c.beginPath(); c.arc(ex + 1, r * 0.9, r * 0.95, Math.PI * 1.32, Math.PI * 1.68); c.stroke();
+      richText(c, [{ t: 'BRASIL', col: '#009c3b', w: 900 }, { t: ' ★★★★★', col: '#002776', w: 900, s: 0.5 }], a + 26, b - 4, r * 1.05);
+    } },
+  { id: 'argentina', group: 'countries', name: 'Argentina', sub: '★★★ Vamos Argentina!', capCol: '#75aadb', ring: '#ffffff', grip: '#1e3a6e', clip: 'silver',
+    barrel(c, a, b, r) {
+      c.fillStyle = '#fff'; c.fillRect(a, -r, b - a, 2 * r);
+      c.fillStyle = '#75aadb'; c.fillRect(a, -r, b - a, r * 0.62); c.fillRect(a, r - r * 0.62, b - a, r * 0.62);
+      starburst(c, a + 13, 0, r * 0.62, '#f6b40e');
+      c.fillStyle = '#f6b40e'; c.beginPath(); c.arc(a + 13, 0, r * 0.3, 0, TAU); c.fill();
+      c.fillStyle = '#1e3a6e'; fitCenter(c, 'ARGENTINA', a + 24, b - 4, r * 0.72, '900');
+    } },
 ];
+const GROUPS = [['clubs', 'Football clubs'], ['countries', 'Countries'], ['ieee', 'IEEE & conferences']];
+const byId = id => DESIGNS.find(d => d.id === id);
 const CLIP_COLS = { gold: ['#fff3b0', '#d4af37', '#8a6d1d'], silver: ['#ffffff', '#b8bec6', '#5f6670'], black: ['#8a9099', '#2b2f36', '#0d0f12'] };
 
 // ---------- pen drawing (local coords: centre at 0,0, tip towards +x) ----------
@@ -630,9 +731,12 @@ function openSelect(who) {
   show('select');
   $('#selTitle').textContent = G.mode === 'cpu' ? 'Choose your pen' : `Player ${who + 1}, choose your pen`;
   const grid = $('#penGrid'); grid.innerHTML = '';
+  GROUPS.forEach(([g, label]) => {
+  const h = document.createElement('div'); h.className = 'grp'; h.textContent = label; grid.appendChild(h);
   DESIGNS.forEach((d, i) => {
+    if (d.group !== g) return;
     const b = document.createElement('button'); b.className = 'card';
-    b.innerHTML = `<canvas></canvas><b></b><span></span>`;
+    b.innerHTML = `<canvas data-i="${i}"></canvas><b></b><span></span>`;
     b.querySelector('b').textContent = d.name; b.querySelector('span').textContent = d.sub;
     if (who === 1 && G.picks[0] === i) { b.disabled = true; b.querySelector('span').textContent = 'Taken by Player 1'; }
     b.onclick = () => {
@@ -643,7 +747,8 @@ function openSelect(who) {
     };
     grid.appendChild(b);
   });
-  requestAnimationFrame(() => grid.querySelectorAll('canvas').forEach((c, i) => drawPenThumb(c, DESIGNS[i])));
+  });
+  requestAnimationFrame(() => grid.querySelectorAll('canvas').forEach(c => drawPenThumb(c, DESIGNS[+c.dataset.i])));
 }
 function startMatch() { G.score = [0, 0]; newRound(0); }
 function newRound(starter) {
@@ -705,10 +810,10 @@ function drawHero() {
   const c = $('#hero'); if (!c.clientWidth) return;
   const w = c.clientWidth, h = c.clientHeight; c.width = w * dpr; c.height = h * dpr;
   const x = c.getContext('2d'), s = Math.min(w / (PEN_L * 1.9), h / (PEN_L * 0.55));
-  [[0, -0.22, -0.18], [6, 0.22, 0.18]].forEach(([di, a, ox]) => {
+  [['rm', -0.22, -0.18], ['bd', 0.22, 0.18]].forEach(([id, a, ox]) => {
     x.setTransform(dpr * s, 0, 0, dpr * s, dpr * (w / 2 + ox * w * 0.35), dpr * h / 2); x.rotate(a);
     x.save(); x.shadowColor = 'rgba(0,0,0,.3)'; x.shadowBlur = 5 * dpr; x.shadowOffsetY = 3 * dpr; x.fillStyle = '#000'; penPath(x); x.fill(); x.restore();
-    drawPen(x, DESIGNS[di]);
+    drawPen(x, byId(id));
   });
 }
 
@@ -893,7 +998,16 @@ window.addEventListener('appinstalled', () => { installEvt = null; $('#btnInstal
 $('#btnInstall').onclick = async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (_) { } installEvt = null; $('#btnInstall').classList.add('hidden'); };
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone) $('#iosTip').classList.remove('hidden');
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  // when a new version takes over, reload once (only if nobody is mid-game)
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded || G.phase !== 'idle') return;
+    reloaded = true; location.reload();
+  });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => { }));
+}
 
 window.addEventListener('resize', () => { resize(); if ($('#home').classList.contains('on')) drawHero(); if (!$('#hud').classList.contains('hidden')) updateHUD(); });
 G.world = makeWorld(isPortraitArea());
