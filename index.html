@@ -183,11 +183,14 @@ h2{font-size:clamp(24px,6.5vw,34px)}
 
 // ---------- constants ----------
 const TAU = Math.PI * 2;
-const PEN_L = 170, PEN_R = 12, HALF = PEN_L / 2 - PEN_R, CAP = 46;
+const ART_L = 170, ART_R = 12, CAP = 46;                 // pen artwork is drawn at this size
+const PEN_SCALE = 0.8, PEN_L = ART_L * PEN_SCALE, PEN_R = ART_R * PEN_SCALE, HALF = PEN_L / 2 - PEN_R;
 const MASS = 1, INERTIA = MASS * PEN_L * PEN_L / 12 * 2;
-const MU_LIN = 560, DAMP_LIN = 0.7, MU_ANG = 11, DAMP_ANG = 1.3;
-const REST = 0.45, CFRIC = 0.25, VMAX = 1350, DT = 1 / 240;
-const LW = 860, LH = 540, FIRST_TO = 3;
+// slow, gliding flicks: top speed is 30% of the first version, with less friction so pens still travel
+const MU_LIN = 110, DAMP_LIN = 0.12, MU_ANG = 5, DAMP_ANG = 0.6;
+const REST = 0.3, CFRIC = 0.25, VMAX = 405, DT = 1 / 240;
+const LW = 860, LH = 540;                                  // bench texture is drawn at this size
+const DESK_W = 1050, DESK_H = 660, FIRST_TO = 3;
 const FONT = "'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
 const HAND = "'Segoe Print','Comic Sans MS','Chalkboard SE','Bradley Hand',cursive";
 const BN = "'Nirmala UI','Noto Sans Bengali','Vrinda','Shonar Bangla',sans-serif";
@@ -452,14 +455,14 @@ const CLIP_COLS = { gold: ['#fff3b0', '#d4af37', '#8a6d1d'], silver: ['#ffffff',
 
 // ---------- pen drawing (local coords: centre at 0,0, tip towards +x) ----------
 function penPath(c) {
-  const r = PEN_R, x0 = -PEN_L / 2, ts = PEN_L / 2 - 26;
+  const r = ART_R, x0 = -ART_L / 2, ts = ART_L / 2 - 26;
   c.beginPath();
-  c.moveTo(x0 + r, -r); c.lineTo(ts, -r); c.lineTo(PEN_L / 2 - 8, -r * 0.45); c.lineTo(PEN_L / 2, 0);
-  c.lineTo(PEN_L / 2 - 8, r * 0.45); c.lineTo(ts, r); c.lineTo(x0 + r, r);
+  c.moveTo(x0 + r, -r); c.lineTo(ts, -r); c.lineTo(ART_L / 2 - 8, -r * 0.45); c.lineTo(ART_L / 2, 0);
+  c.lineTo(ART_L / 2 - 8, r * 0.45); c.lineTo(ts, r); c.lineTo(x0 + r, r);
   c.arc(x0 + r, 0, r, Math.PI / 2, Math.PI * 1.5); c.closePath();
 }
 function drawPen(c, d) {
-  const r = PEN_R, x0 = -PEN_L / 2, ce = x0 + CAP, ts = PEN_L / 2 - 26, tm = PEN_L / 2 - 8, xe = PEN_L / 2;
+  const r = ART_R, x0 = -ART_L / 2, ce = x0 + CAP, ts = ART_L / 2 - 26, tm = ART_L / 2 - 8, xe = ART_L / 2;
   c.save(); penPath(c); c.clip();
   d.barrel(c, ce, ts, r);
   c.fillStyle = d.grip; c.fillRect(ts, -r, tm - ts, 2 * r);
@@ -472,7 +475,7 @@ function drawPen(c, d) {
   const g = c.createLinearGradient(0, -r, 0, r);
   g.addColorStop(0, 'rgba(0,0,0,.3)'); g.addColorStop(0.17, 'rgba(255,255,255,.55)'); g.addColorStop(0.32, 'rgba(255,255,255,.1)');
   g.addColorStop(0.62, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)');
-  c.fillStyle = g; c.fillRect(x0 - 1, -r, PEN_L + 2, 2 * r);
+  c.fillStyle = g; c.fillRect(x0 - 1, -r, ART_L + 2, 2 * r);
   c.restore();
   // pocket clip
   const cc = CLIP_COLS[d.clip], cg = c.createLinearGradient(0, -3, 0, 3);
@@ -488,7 +491,7 @@ function drawPenThumb(cv, d, angle = 0) {
   cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   const c = cv.getContext('2d');
   const ac = Math.abs(Math.cos(angle)), as = Math.abs(Math.sin(angle));
-  const s = Math.min((w - 8) / (ac * PEN_L + as * PEN_R * 2), (h - 6) / (as * PEN_L + ac * PEN_R * 2));
+  const s = Math.min((w - 8) / (ac * ART_L + as * ART_R * 2), (h - 6) / (as * ART_L + ac * ART_R * 2));
   c.setTransform(dpr * s, 0, 0, dpr * s, dpr * w / 2, dpr * h / 2); c.rotate(angle);
   c.save(); c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 4 * dpr; c.shadowOffsetY = 2 * dpr; c.fillStyle = '#000'; penPath(c); c.fill(); c.restore();
   drawPen(c, d);
@@ -496,8 +499,8 @@ function drawPenThumb(cv, d, angle = 0) {
 
 // ---------- the bench (landscape texture, rotated for portrait) ----------
 function makeDesk(q) {
-  const cv = document.createElement('canvas'); cv.width = Math.round(LW * q); cv.height = Math.round(LH * q);
-  const c = cv.getContext('2d'); c.scale(q, q);
+  const cv = document.createElement('canvas'); cv.width = Math.round(DESK_W * q); cv.height = Math.round(DESK_H * q);
+  const c = cv.getContext('2d'); c.scale(q * DESK_W / LW, q * DESK_H / LH);
   const R = mulberry32(7);
   let g = c.createLinearGradient(0, 0, 0, LH); g.addColorStop(0, '#b97d47'); g.addColorStop(0.5, '#aa6e3a'); g.addColorStop(1, '#9c6333');
   c.fillStyle = g; c.fillRect(0, 0, LW, LH);
@@ -641,7 +644,7 @@ function applyFlick(p, u, dx, dy, power) {
   applyImp(p, dx * J, dy * J, rx, ry);
 }
 function makeWorld(portrait) {
-  const W = portrait ? LH : LW, H = portrait ? LW : LH;
+  const W = portrait ? DESK_H : DESK_W, H = portrait ? DESK_W : DESK_H;
   const j = v => (Math.random() - 0.5) * v;
   const pen = (owner, x, y, a) => ({ owner, x, y, a, vx: 0, vy: 0, w: 0, fallen: false, fallT: 0 });
   const pens = portrait
@@ -703,7 +706,7 @@ const SFX = {
     s.buffer = buf; f.type = type; f.frequency.value = freq; this.env(g, t, 0.002, dur, vol);
     s.connect(f).connect(g).connect(this.ac.destination); s.start(t); s.stop(t + dur + 0.05);
   },
-  hit(s) { const v = clamp(s / 900, 0.05, 1); this.noise(0.05, 0.35 * v, 2600); this.tone(1700, 900, 0.06, 'triangle', 0.25 * v); },
+  hit(s) { const v = clamp(s / 400, 0.05, 1); this.noise(0.05, 0.35 * v, 2600); this.tone(1700, 900, 0.06, 'triangle', 0.25 * v); },
   flick(p) { this.noise(0.07, 0.25 * p + 0.05, 1200, 'highpass'); this.tone(420, 160, 0.08, 'sine', 0.12); },
   fall() { this.tone(220, 70, 0.28, 'sine', 0.25); this.noise(0.12, 0.3, 500, 'lowpass', 0.22); this.tone(900, 500, 0.05, 'triangle', 0.15, 0.24); },
   win() { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, f, 0.14, 'square', 0.06, i * 0.1)); },
@@ -871,7 +874,7 @@ function showMatch(win) {
 function drawHero() {
   const c = $('#hero'); if (!c.clientWidth) return;
   const w = c.clientWidth, h = c.clientHeight; c.width = w * dpr; c.height = h * dpr;
-  const x = c.getContext('2d'), s = Math.min(w / (PEN_L * 1.9), h / (PEN_L * 0.55));
+  const x = c.getContext('2d'), s = Math.min(w / (ART_L * 1.9), h / (ART_L * 0.55));
   [['rm', -0.22, -0.18], ['bd', 0.22, 0.18]].forEach(([id, a, ox]) => {
     x.setTransform(dpr * s, 0, 0, dpr * s, dpr * (w / 2 + ox * w * 0.35), dpr * h / 2); x.rotate(a);
     x.save(); x.shadowColor = 'rgba(0,0,0,.3)'; x.shadowBlur = 5 * dpr; x.shadowOffsetY = 3 * dpr; x.fillStyle = '#000'; penPath(x); x.fill(); x.restore();
@@ -1059,12 +1062,12 @@ function handleEvents(ev) {
   for (const e of ev) {
     if (e.t === 'hit') {
       if (e.s > 25 && G.time - G.lastHit > 0.05) { G.lastHit = G.time; SFX.hit(e.s); }
-      if (e.s > 120) {
-        const n = Math.min(14, 3 + e.s / 80 | 0);
+      if (e.s > 50) {
+        const n = Math.min(14, 3 + e.s / 35 | 0);
         for (let i = 0; i < n; i++) { const a = Math.random() * TAU, v = 80 + Math.random() * 220; G.parts.push({ k: 'spark', x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.3 + Math.random() * 0.2, t: 0 }); }
-        G.parts.push({ k: 'ring', x: e.x, y: e.y, life: 0.35, t: 0, m: Math.min(1, e.s / 700) });
-        G.shake = Math.max(G.shake, Math.min(10, e.s / 90));
-        if (e.s > 350 && navigator.vibrate) try { navigator.vibrate(Math.min(35, e.s / 25 | 0)); } catch (_) { }
+        G.parts.push({ k: 'ring', x: e.x, y: e.y, life: 0.35, t: 0, m: Math.min(1, e.s / 300) });
+        G.shake = Math.max(G.shake, Math.min(10, e.s / 40));
+        if (e.s > 150 && navigator.vibrate) try { navigator.vibrate(Math.min(35, e.s / 10 | 0)); } catch (_) { }
       }
     } else if (e.t === 'fall') {
       SFX.fall(); G.shake = Math.max(G.shake, 6);
@@ -1094,7 +1097,7 @@ function update(dt) {
 // ---------- rendering ----------
 function renderPen(p, k) {
   const fallen = p.fallen, t = Math.min(1, p.fallT);
-  ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+  ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.scale(PEN_SCALE, PEN_SCALE);
   if (fallen) { const sc = 1 - 0.22 * t; ctx.scale(sc, sc); }
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 7 * k; ctx.shadowOffsetX = 3 * k; ctx.shadowOffsetY = 5 * k;
   ctx.fillStyle = '#000'; penPath(ctx); ctx.fill(); ctx.restore();
@@ -1104,7 +1107,7 @@ function renderPen(p, k) {
 }
 function renderGlow(p, col) {
   const pulse = 0.55 + 0.35 * Math.sin(G.time * 5);
-  ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+  ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.scale(PEN_SCALE, PEN_SCALE);
   ctx.globalAlpha = pulse; ctx.shadowColor = col; ctx.shadowBlur = 18 * view.s * dpr;
   ctx.strokeStyle = col; ctx.lineWidth = 5; penPath(ctx); ctx.stroke();
   ctx.restore();
@@ -1148,8 +1151,8 @@ function render() {
   ctx.fillStyle = '#4a2a12'; ctx.fillRect(0, 0, w.W, w.H + 14); ctx.restore();
   const fg = ctx.createLinearGradient(0, w.H, 0, w.H + 14); fg.addColorStop(0, '#6e4020'); fg.addColorStop(1, '#3a200c');
   ctx.fillStyle = fg; ctx.fillRect(0, w.H, w.W, 14);
-  if (w.portrait) { ctx.save(); ctx.translate(w.W, 0); ctx.rotate(Math.PI / 2); ctx.drawImage(deskTex, 0, 0, LW, LH); ctx.restore(); }
-  else ctx.drawImage(deskTex, 0, 0, LW, LH);
+  if (w.portrait) { ctx.save(); ctx.translate(w.W, 0); ctx.rotate(Math.PI / 2); ctx.drawImage(deskTex, 0, 0, DESK_W, DESK_H); ctx.restore(); }
+  else ctx.drawImage(deskTex, 0, 0, DESK_W, DESK_H);
   if (G.phase === 'aim' || G.phase === 'cpu') { const p = w.pens[G.turn]; if (!p.fallen) renderGlow(p, P_COL[G.turn]); }
   for (const p of w.pens) if (!p.fallen || p.fallT < 0.5) renderPen(p, k);
   for (const p of G.parts) {
